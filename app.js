@@ -14,9 +14,8 @@ var accessKey = process.env.ACCESS_KEY || "ChangeMe";
 var port = process.env.PORT || 8080;
 
 // Paths to resources on the endpoints
-var blinkResourceURI = '/3201/0/5850';
-var blinkPatternResourceURI = '/3201/0/5853';
-var buttonResourceURI = '/3200/0/5501';
+var blinkPatternResourceURI = '/LED/0/DoBlink';
+var nameResourceURI = '/NAME/0/DeviceName';
 
 // Instantiate an mbed Device Connector object
 var mbedConnectorApi = new MbedConnectorApi({
@@ -32,14 +31,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', function (req, res) {
   // Get all of the endpoints and necessary info to render the page
   mbedConnectorApi.getEndpoints(function(error, endpoints) {
+    console.log(endpoints)
     if (error) {
       throw error;
     } else {
       // Setup the function array
       var functionArray = endpoints.map(function(endpoint) {
         return function(mapCallback) {
-          mbedConnectorApi.getResourceValue(endpoint.name, blinkPatternResourceURI, function(error, value) {
-            endpoint.blinkPattern = value;
+          mbedConnectorApi.getResourceValue(endpoint.name, nameResourceURI, function(error, value) {
+            endpoint.deviceName = value;
             mapCallback(error);
           });
         };
@@ -79,47 +79,9 @@ io.on('connection', function (socket) {
   // Add new client to array of client upon connection
   sockets.push(socket);
 
-  socket.on('subscribe-to-presses', function (data) {
-    // Subscribe to all changes of resource /3200/0/5501 (button presses)
-    mbedConnectorApi.putResourceSubscription(data.endpointName, buttonResourceURI, function(error) {
-      if (error) throw error;
-      socket.emit('subscribed-to-presses', {
-        endpointName: data.endpointName
-      });
-    });
-  });
-
-  socket.on('unsubscribe-to-presses', function(data) {
-    // Unsubscribe from the resource /3200/0/5501 (button presses)
-    mbedConnectorApi.deleteResourceSubscription(data.endpointName, buttonResourceURI, function(error) {
-      if (error) throw error;
-      socket.emit('unsubscribed-to-presses', {
-        endpointName: data.endpointName
-      });
-    });
-  });
-
-  socket.on('get-presses', function(data) {
-    // Read data from GET resource /3200/0/5501 (num button presses)
-    mbedConnectorApi.getResourceValue(data.endpointName, buttonResourceURI, function(error, value) {
-      if (error) throw error;
-      socket.emit('presses', {
-        endpointName: data.endpointName,
-        value: value
-      });
-    });
-  });
-
-  socket.on('update-blink-pattern', function(data) {
-    // Set data on PUT resource /3201/0/5853 (pattern of LED blink)
-    mbedConnectorApi.putResourceValue(data.endpointName, blinkPatternResourceURI, data.blinkPattern, function(error) {
-      if (error) throw error;
-    });
-  });
-
   socket.on('blink', function(data) {
-    // POST to resource /3201/0/5850 (start blinking LED)
-    mbedConnectorApi.postResource(data.endpointName, blinkResourceURI, null, function(error) {
+    // POST to resource '/LED/0/DoBlink' (start blinking LED)
+    mbedConnectorApi.postResource(data.endpointName, blinkPatternResourceURI, null, function(error) {
       if (error) throw error;
     });
   });
@@ -131,19 +93,6 @@ io.on('connection', function (socket) {
       sockets.splice(index, 1);
     }
   })
-});
-
-// When notifications are received through the notification channel, pass the
-// button presses data to all connected browser windows
-mbedConnectorApi.on('notification', function(notification) {
-  if (notification.path === buttonResourceURI) {
-    sockets.forEach(function(socket) {
-      socket.emit('presses', {
-        endpointName: notification.ep,
-        value: notification.payload
-      });
-    });
-  }
 });
 
 // Start the app

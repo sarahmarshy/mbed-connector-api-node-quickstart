@@ -24,38 +24,20 @@
     <div class="blueband">
       <div class="row">
         <div class="small-12 columns">
-          <h1>Webapp Quickstart</h1>
+          <h1>TechCon Connectivity Demo</h1>
         </div>
       </div>
     </div>
     <div id="endpoints">
     {{#each endpoints}}
       <div class="row" id="{{name}}">
-        <div class="small-12 columns">
+        <div class="small-12 columns" style="padding-top:50px">
           <div class="row">
-            <div class="small-12 columns">
-              <h2>{{name}}</h2>
+            <div class="small-6 columns">
+              <h2>{{deviceName}}</h2>
             </div>
-          </div>
-          <div class="row">
-            <div class="small-12 medium-6 columns">
-              <h4>Presses: <span class="presses-value">Unknown</span></h4>
-              <label><input type="checkbox" class="subscribe-presses"> Subscribe</label>
-              <button class="get-presses">GET</button>
-            </div>
-            <div class="small-12 medium-6 columns">
-              <h4>LED Blink Pattern</h4>
-              <div>
-                <input type="text" value="{{blinkPattern}}" class="blink-pattern">
-              </div>
-              <div class="row">
-                <div class="small-6 columns">
-                  <button class="update-blink-pattern">Update (PUT)</button>
-                </div>
-                <div class="small-6 columns text-right">
-                  <button class="blink">Blink (POST)</button>
-                </div>
-              </div>
+            <div class="small-6 columns">
+              <button class="blink">Blink (POST)</button>
             </div>
           </div>
         </div>
@@ -80,58 +62,12 @@
 
         $('#endpoints').children().each(function(index, element) {
           var _this = $(this);
-          _this.find('.subscribe-presses').change(function() {
-            if ($(this).is(":checked")) {
-              _this.find('.get-presses').prop('disabled', true);
-              socket.emit('subscribe-to-presses', {
-                endpointName: _this.attr('id')
-              });
-            } else {
-              _this.find('.get-presses').prop('disabled', false);
-              socket.emit('unsubscribe-to-presses', {
-                endpointName: _this.attr('id')
-              });
-            }
-          });
-
-          _this.find('.get-presses').on('click', function() {
-            socket.emit('get-presses', {
-              endpointName: _this.attr('id')
-            });
-          });
-
-          _this.find('.blink-pattern').bind('input', function() {
-            _this.find('.update-blink-pattern').addClass('active');
-          })
-
-          _this.find('.update-blink-pattern').on('click', function() {
-            socket.emit('update-blink-pattern', {
-              endpointName: _this.attr('id'),
-              blinkPattern: _this.find('.blink-pattern').val()
-            });
-
-            $(this).removeClass('active');
-          });
 
           _this.find('.blink').on('click', function() {
             socket.emit('blink', {
               endpointName: _this.attr('id')
             });
           });
-        });
-
-
-        socket.on('presses', function (data) {
-          console.log('presses', data);
-          $('#' + data.endpointName + ' .presses-value').html(data.value);
-        });
-
-        socket.on('subscribed-to-presses', function (data) {
-          console.log('subscribed-to-presses', data);
-        });
-
-        socket.on('unsubscribed-to-presses', function (data) {
-          console.log('unsubscribed-to-presses', data);
         });
       });
     </script>
